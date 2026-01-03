@@ -1,0 +1,476 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Intelligent Document Reader</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            overflow: hidden;
+        }
+
+        header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+
+        .subtitle {
+            opacity: 0.9;
+            font-size: 1.1em;
+        }
+
+        .main-content {
+            padding: 40px;
+        }
+
+        .upload-section {
+            border: 3px dashed #667eea;
+            border-radius: 15px;
+            padding: 40px;
+            text-align: center;
+            margin-bottom: 30px;
+            background: #f8f9ff;
+            transition: all 0.3s;
+        }
+
+        .upload-section:hover {
+            background: #f0f2ff;
+            border-color: #764ba2;
+        }
+
+        .upload-section.dragover {
+            background: #e8ebff;
+            border-color: #764ba2;
+            transform: scale(1.02);
+        }
+
+        input[type="file"] {
+            display: none;
+        }
+
+        .upload-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 15px 40px;
+            border: none;
+            border-radius: 25px;
+            font-size: 1.1em;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .upload-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        .options-section {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .option-card {
+            background: #f8f9ff;
+            padding: 20px;
+            border-radius: 10px;
+            border: 2px solid #e0e3ff;
+        }
+
+        .option-card h3 {
+            color: #667eea;
+            margin-bottom: 15px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #555;
+            font-weight: 500;
+        }
+
+        select, input[type="number"] {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #e0e3ff;
+            border-radius: 8px;
+            font-size: 1em;
+            transition: border-color 0.3s;
+        }
+
+        select:focus, input[type="number"]:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .checkbox-container {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        input[type="checkbox"] {
+            width: 20px;
+            height: 20px;
+            cursor: pointer;
+        }
+
+        .process-btn {
+            width: 100%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 15px;
+            border: none;
+            border-radius: 10px;
+            font-size: 1.2em;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin-bottom: 20px;
+        }
+
+        .process-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        .process-btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .results-section {
+            display: none;
+            margin-top: 30px;
+        }
+
+        .result-card {
+            background: #f8f9ff;
+            padding: 25px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            border-left: 5px solid #667eea;
+        }
+
+        .result-card h3 {
+            color: #667eea;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .result-text {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            border: 1px solid #e0e3ff;
+            max-height: 300px;
+            overflow-y: auto;
+            line-height: 1.6;
+            white-space: pre-wrap;
+        }
+
+        .metadata {
+            display: flex;
+            gap: 20px;
+            margin-top: 15px;
+            flex-wrap: wrap;
+        }
+
+        .metadata-item {
+            background: white;
+            padding: 8px 15px;
+            border-radius: 20px;
+            font-size: 0.9em;
+            color: #667eea;
+            border: 1px solid #e0e3ff;
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 20px;
+        }
+
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 15px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .error {
+            background: #ffe0e0;
+            color: #d00;
+            padding: 15px;
+            border-radius: 8px;
+            border-left: 5px solid #d00;
+            margin-bottom: 20px;
+            display: none;
+        }
+
+        .success {
+            background: #e0ffe0;
+            color: #0a0;
+            padding: 15px;
+            border-radius: 8px;
+            border-left: 5px solid #0a0;
+            margin-bottom: 20px;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>📄 Intelligent Document Reader</h1>
+            <p class="subtitle">Extract, Translate, and Summarize Documents with AI</p>
+        </header>
+
+        <div class="main-content">
+            <div class="error" id="errorMsg"></div>
+            <div class="success" id="successMsg"></div>
+
+            <div class="upload-section" id="uploadSection">
+                <h2 style="color: #667eea; margin-bottom: 20px;">Upload Document</h2>
+                <p style="color: #666; margin-bottom: 20px;">
+                    Drag and drop your document here or click to browse
+                </p>
+                <input type="file" id="fileInput" accept="image/*,.pdf">
+                <button class="upload-btn" onclick="document.getElementById('fileInput').click()">
+                    Choose File
+                </button>
+                <p id="fileName" style="margin-top: 15px; color: #667eea; font-weight: bold;"></p>
+            </div>
+
+            <div class="options-section">
+                <div class="option-card">
+                    <h3>🌐 Translation</h3>
+                    <label for="translateLang">Target Language:</label>
+                    <select id="translateLang">
+                        <option value="">None (Skip Translation)</option>
+                        {% for code, name in languages.items() %}
+                        <option value="{{ code }}">{{ name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="option-card">
+                    <h3>📝 Summarization</h3>
+                    <div class="checkbox-container">
+                        <input type="checkbox" id="summarizeCheck">
+                        <label for="summarizeCheck" style="margin: 0;">Enable Summarization</label>
+                    </div>
+                    <label for="maxLength" style="margin-top: 15px;">Max Length:</label>
+                    <input type="number" id="maxLength" value="150" min="30" max="500">
+                </div>
+
+                <div class="option-card">
+                    <h3>⚙️ Processing</h3>
+                    <div class="checkbox-container">
+                        <input type="checkbox" id="preprocessCheck" checked>
+                        <label for="preprocessCheck" style="margin: 0;">Image Preprocessing</label>
+                    </div>
+                </div>
+            </div>
+
+            <button class="process-btn" id="processBtn" onclick="processDocument()" disabled>
+                🚀 Process Document
+            </button>
+
+            <div class="loading" id="loading">
+                <div class="spinner"></div>
+                <p>Processing your document... This may take a moment.</p>
+            </div>
+
+            <div class="results-section" id="results">
+                <div class="result-card" id="ocrResult" style="display: none;">
+                    <h3>📖 Extracted Text</h3>
+                    <div class="result-text" id="ocrText"></div>
+                    <div class="metadata" id="ocrMetadata"></div>
+                </div>
+
+                <div class="result-card" id="translationResult" style="display: none;">
+                    <h3>🌐 Translated Text</h3>
+                    <div class="result-text" id="translatedText"></div>
+                    <div class="metadata" id="translationMetadata"></div>
+                </div>
+
+                <div class="result-card" id="summaryResult" style="display: none;">
+                    <h3>📝 Summary</h3>
+                    <div class="result-text" id="summaryText"></div>
+                    <div class="metadata" id="summaryMetadata"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let selectedFile = null;
+
+        // File input handling
+        document.getElementById('fileInput').addEventListener('change', function(e) {
+            selectedFile = e.target.files[0];
+            if (selectedFile) {
+                document.getElementById('fileName').textContent = `Selected: ${selectedFile.name}`;
+                document.getElementById('processBtn').disabled = false;
+            }
+        });
+
+        // Drag and drop
+        const uploadSection = document.getElementById('uploadSection');
+
+        ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+            uploadSection.addEventListener(eventName, preventDefaults, false);
+        });
+
+        function preventDefaults(e) {
+            e.preventDefault();
+            e.stopPropagation();
+        }
+
+        ['dragenter', 'dragover'].forEach(eventName => {
+            uploadSection.addEventListener(eventName, () => {
+                uploadSection.classList.add('dragover');
+            }, false);
+        });
+
+        ['dragleave', 'drop'].forEach(eventName => {
+            uploadSection.addEventListener(eventName, () => {
+                uploadSection.classList.remove('dragover');
+            }, false);
+        });
+
+        uploadSection.addEventListener('drop', function(e) {
+            const dt = e.dataTransfer;
+            const files = dt.files;
+            if (files.length > 0) {
+                selectedFile = files[0];
+                document.getElementById('fileName').textContent = `Selected: ${selectedFile.name}`;
+                document.getElementById('processBtn').disabled = false;
+            }
+        });
+
+        // Process document
+        async function processDocument() {
+            if (!selectedFile) return;
+
+            const formData = new FormData();
+            formData.append('file', selectedFile);
+            formData.append('target_lang', document.getElementById('translateLang').value);
+            formData.append('summarize', document.getElementById('summarizeCheck').checked);
+
+            // Show loading
+            document.getElementById('loading').style.display = 'block';
+            document.getElementById('results').style.display = 'none';
+            document.getElementById('errorMsg').style.display = 'none';
+            document.getElementById('processBtn').disabled = true;
+
+            try {
+                const response = await fetch('/process', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    displayResults(data.results);
+                    showMessage('Document processed successfully!', 'success');
+                } else {
+                    showMessage(data.error || 'Processing failed', 'error');
+                }
+            } catch (error) {
+                showMessage('Network error: ' + error.message, 'error');
+            } finally {
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('processBtn').disabled = false;
+            }
+        }
+
+        function displayResults(results) {
+            document.getElementById('results').style.display = 'block';
+
+            // OCR Results
+            if (results.ocr && results.ocr.success) {
+                document.getElementById('ocrResult').style.display = 'block';
+                document.getElementById('ocrText').textContent = results.ocr.text;
+                document.getElementById('ocrMetadata').innerHTML = `
+                    <div class="metadata-item">Words: ${results.ocr.word_count}</div>
+                    <div class="metadata-item">Confidence: ${results.ocr.confidence}%</div>
+                `;
+            }
+
+            // Translation Results
+            if (results.translation && results.translation.success) {
+                document.getElementById('translationResult').style.display = 'block';
+                document.getElementById('translatedText').textContent = results.translation.translated_text;
+                document.getElementById('translationMetadata').innerHTML = `
+                    <div class="metadata-item">${results.translation.source_lang} → ${results.translation.target_lang}</div>
+                `;
+            }
+
+            // Summary Results
+            if (results.summarization && results.summarization.success) {
+                document.getElementById('summaryResult').style.display = 'block';
+                document.getElementById('summaryText').textContent = results.summarization.summary;
+                document.getElementById('summaryMetadata').innerHTML = `
+                    <div class="metadata-item">Original: ${results.summarization.original_length} words</div>
+                    <div class="metadata-item">Summary: ${results.summarization.summary_length} words</div>
+                    <div class="metadata-item">Ratio: ${results.summarization.compression_ratio}</div>
+                `;
+            }
+        }
+
+        function showMessage(message, type) {
+            const errorMsg = document.getElementById('errorMsg');
+            const successMsg = document.getElementById('successMsg');
+
+            if (type === 'error') {
+                errorMsg.textContent = message;
+                errorMsg.style.display = 'block';
+                successMsg.style.display = 'none';
+            } else {
+                successMsg.textContent = message;
+                successMsg.style.display = 'block';
+                errorMsg.style.display = 'none';
+            }
+        }
+    </script>
+</body>
+</html>
